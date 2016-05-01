@@ -1,1 +1,1 @@
-# n-queens-mpi implementation. initial commit
+# N Queens using MPI
