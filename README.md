@@ -1,1 +1,1 @@
-# nq-mpi
+# n-queens-mpi implementation. initial commit
