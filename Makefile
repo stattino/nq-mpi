@@ -1,7 +1,7 @@
 CC_1=gcc
 CC_2=icc
 CFLAGS=-g
-LDFLAGS= -lm
+LDFLAGS= -lm -std=c99
 
 GCC_OPT=-g -03 -ftree-vectorize
 
@@ -13,11 +13,11 @@ EXECUTABLES=main
 all: $(EXECUTABLES)
 
 main_safe: main.c
-	$(CC_1) $< $(CFLAGS)
+	$(CC_1) $< $(CFLAGS) $(LDFLAGS)
 main_gcc: main.c
-	$(CC_1) $< $(GCC_OPT) -o $@ 
+	$(CC_1) $< $(GCC_OPT) -o $@ $(LDFLAGS)
 main_icc: main.c
-	$(CC_2) $< $(ICC_OPT) -o 
+	$(CC_2) $< $(ICC_OPT) -o  $(LDFLAGS)
 
 clean:
 	rm -f $(EXECUTABLES)
