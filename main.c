@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 // #include <mpi.h>
-static const int BOARDSIZE=7;
+static const int BOARDSIZE=13;
 static int solutions=0;
 typedef int bool;
 #define true 1
