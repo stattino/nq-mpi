@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 // #include <mpi.h>
-static const int BOARDSIZE=13;
+#include <time.h>
+static const int BOARDSIZE=14;
 static int solutions=0;
 typedef int bool;
 #define true 1
@@ -66,8 +67,12 @@ static void nq_recursion(const int counter, int board[]) {
 int main(int argc, char *argv[]) {
     // std::vector<int> chessboard(BOARDSIZE);
     int chessboard[BOARDSIZE];
+    clock_t time;
+    time = clock();
     nq_recursion(0, chessboard);
-    printf("Solutions: %i", solutions);
+    time = clock() - time;
+    double elapsed_time = ((double)(time))/CLOCKS_PER_SEC;
+    printf("Solutions: %i in %f seconde", solutions, elapsed_time);
     
     /*
      int myrank, mysize;
