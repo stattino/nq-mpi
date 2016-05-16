@@ -1,4 +1,5 @@
 **/profiles
 **/plots
-plot_script.R
-
+plot_script*
+main_*
+*.tex
