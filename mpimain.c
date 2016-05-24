@@ -54,9 +54,10 @@ int worker_recursion(int counter, int board[]){
 // Deals out work to worker processes.
 // Right now, N < boardsize, and it deals out N tasks in total, where each task is
 // the board with the first queen on a row.
-void nq_recursion_master(const int counter, int board[]) {
+void nq_recursion_master(int myRank, int mySize) {
     if (mySize>BOARDSIZE) {printf("Not implemented yet! \n"); return;} // Fix when N>boardsize
     int buf[2], i, activeWorkers, totalSolutions;
+    MPI_Status status;
 
     // Send one job to each process in the commgroup.
     // Keep i as tracker of where the queen has been placed.
@@ -101,9 +102,10 @@ void nq_recursion_master(const int counter, int board[]) {
 // Worker mpi function.
 // Receives a position on the board and starts worker_recursions on them.
 // Terminates only when they receive a termination message in buf[1].
-void nq_recursion_worker() {
+void nq_recursion_worker(int myRank,int mySize) {
     int buf, row, partialSolutions;
-    
+    MPI_Status status;
+
     // Receive initial work
     MPI_Recv(&buf, 2, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status)
     if (buf[1]==0) {
@@ -132,15 +134,14 @@ int main(int argc, char *argv[]) {
     clock_t time;
     
     time = clock();
-    MPI_Status status;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &mySize);
     if (myRank==0){
-        nq_recursion_master(0,chessboard);
+        nq_recursion_master(myRank, mySize);
     }
     else {
-        nq_recursion_worker();
+        nq_recursion_worker(myRank, mySize);
     }
 
 
