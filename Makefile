@@ -7,17 +7,18 @@ MKL_FLAGS=-DMKLINUSE -DMKL_ILP64 -I${MKLROOT}/include -L${MKLROOT}/lib/intel64 -
 ICC_OPT=-O3 -xHost
 
 
-EXECUTABLES=main_safe main_gcc main_heavy main_icc
-
+EXECUTABLES=main_safe main_gcc main_heavy main_mpi
+#main_icc
 all: $(EXECUTABLES)
 main_safe: main.c
-        $(CC) $(C_FLAGS) $< $(LDFLAGS) -o $@
+	$(CC) $(C_FLAGS) $< $(LDFLAGS) -o $@
 main_gcc: main.c
-        $(CC) $(GCC_OPT) $< $(LDFLAGS) -o $@
+	$(CC) $(GCC_OPT) $< $(LDFLAGS) -o $@
 main_heavy: main.c
-        $(CC) $(GCC_OPT_HEAVY) $< $(LDFLAGS) -o $@
-main_icc: main.c
-        icc $(ICC_OPT) $< $(MKL_FLAGS) -lm -o $@
-
+	$(CC) $(GCC_OPT_HEAVY) $< $(LDFLAGS) -o $@
+main_mpi: mpimain.c
+	mpicc -std=c99 mpimain.c -o main_mpi
+#main_icc: main.c
+#	icc $(ICC_OPT) $< $(MKL_FLAGS) -lm -o $@
 clean:
-        rm -f $(EXECUTABLES)
+	rm -f $(EXECUTABLES)
