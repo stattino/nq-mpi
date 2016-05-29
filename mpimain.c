@@ -69,7 +69,7 @@ int nq_recursion_master(int myRank, int mySize) {
         MPI_Send(&buf, 2, MPI_INT, i, 0, MPI_COMM_WORLD);
         printf("Master dealing out job %d of %d \n ", row+1, BOARDSIZE);
     }
-    activeWorkers = i;
+    activeWorkers = row;
 
     // Controls communication to the workers while they are active.
     // When a solution is received: either send more work to, or kill, the process.
@@ -87,13 +87,13 @@ int nq_recursion_master(int myRank, int mySize) {
 
         // If received solution was to the final task: initialize a count down, and start killing
         // processes. Otherwise keep sending out work.
-        if (i == BOARDSIZE) {
+        if (row == BOARDSIZE) {
             activeWorkers = mySize-2; // mySize - (thisprocess+masterprocess)
             buf[1] = 0;
             MPI_Send(&buf, 2, MPI_INT, sender, 0, MPI_COMM_WORLD);
             row++;
         }
-        else if (i>BOARDSIZE) {
+        else if (row>BOARDSIZE) {
             buf[1] = 0;
             MPI_Send(&buf, 2, MPI_INT, sender, 0, MPI_COMM_WORLD);
             activeWorkers--;
