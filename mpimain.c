@@ -66,7 +66,7 @@ int nq_recursion_master(int myRank, int mySize) {
     for (row=0; row<mySize-1; row++) {
         buf[0] = row;
         buf[1] = 1;
-        MPI_Send(&buf, 2, MPI_INT, i, 0, MPI_COMM_WORLD);
+        MPI_Send(&buf, 2, MPI_INT, row, 0, MPI_COMM_WORLD);
         printf("Master dealing out job %d of %d \n ", row+1, BOARDSIZE);
     }
     activeWorkers = row;
