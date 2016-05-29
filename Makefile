@@ -17,7 +17,7 @@ main_gcc: main.c
 main_heavy: main.c
 	$(CC) $(GCC_OPT_HEAVY) $< $(LDFLAGS) -o $@
 main_mpi: mpimain.c
-	mpicc -std=c99 mpimain.c -o main_mpi
+         mpiicc mpimain.c -std=c99 -Wall -o $@
 #main_icc: main.c
 #	icc $(ICC_OPT) $< $(MKL_FLAGS) -lm -o $@
 clean:
