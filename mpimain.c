@@ -1,9 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
-#include <time.h>
-const int BOARDSIZE=12;// Add this as input-argument to automize
-int solutions=0;
+const int BOARDSIZE=10;// Add this as input-argument to automize
 
 typedef int bool;
 #define true 1
@@ -54,53 +52,62 @@ int worker_recursion(int counter, int board[]){
 // Deals out work to worker processes.
 // Right now, N < boardsize, and it deals out N tasks in total, where each task is
 // the board with the first queen on a row.
-void nq_recursion_master(int myRank, int mySize) {
-    if (mySize>BOARDSIZE) {printf("Not implemented yet! \n"); return;} // Fix when N>boardsize
-    int buf[2], i, activeWorkers, totalSolutions;
-    MPI_Status status;
+int nq_recursion_master(int myRank, int mySize) {
+    if (mySize>BOARDSIZE) {     // Fix when N>boardsize
+        printf("Not implemented yet! \n");
+        return 0;
+    }
+    
+    int buf[2], row, activeWorkers, totalSolutions;
+    totalSolutions = 0;
 
     // Send one job to each process in the commgroup.
     // Keep i as tracker of where the queen has been placed.
-    for (i=0; i<mySize-1; i++) {
-        buf[0] = i;
+    for (row=0; row<mySize-1; row++) {
+        buf[0] = row;
         buf[1] = 1;
-        MPI_Send(&buf, 2, MPI_INT, i, MPI_ANY_TAG, MPI_COMM_WORLD);
-        printf("Master dealing out job %d of %d \n ", i+1,BOARDSIZE);
+        MPI_Send(&buf, 2, MPI_INT, i, 0, MPI_COMM_WORLD);
+        printf("Master dealing out job %d of %d \n ", row+1, BOARDSIZE);
     }
     activeWorkers = i;
-
 
     // Controls communication to the workers while they are active.
     // When a solution is received: either send more work to, or kill, the process.
     while (activeWorkers>0) {
         int sender;
-        MPI_Recv(&buf, 2, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        sender=status.MPI_SOURCE;
+        MPI_Status status;
+
+        MPI_Recv(&buf, 2, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+    
+        sender = status.MPI_SOURCE;
+        // tag=status.MPI_Probe; // Is this needed? just keep to try it out
+        
         totalSolutions += buf[0];
-        printf("Worker no. %d found %d solutions \n ", sender,buf[0]);
+        printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
 
         // If received solution was to the final task: initialize a count down, and start killing
         // processes. Otherwise keep sending out work.
         if (i == BOARDSIZE) {
             activeWorkers = mySize-2; // mySize - (thisprocess+masterprocess)
             buf[1] = 0;
-            MPI_Send(&buf, 2, MPI_INT, sender, MPI_ANY_TAG, MPI_COMM_WORLD);
-            i++;
+            MPI_Send(&buf, 2, MPI_INT, sender, 0, MPI_COMM_WORLD);
+            row++;
         }
         else if (i>BOARDSIZE) {
             buf[1] = 0;
-            MPI_Send(&buf, 2, MPI_INT, sender, MPI_ANY_TAG, MPI_COMM_WORLD);
+            MPI_Send(&buf, 2, MPI_INT, sender, 0, MPI_COMM_WORLD);
             activeWorkers--;
         }
         else {
-            buf[0] = i;
+            buf[0] = row;
             buf[1] = 1;
-            MPI_Send(&buf, 2, MPI_INT, sender, MPI_ANY_TAG, MPI_COMM_WORLD);
-            printf("Master dealing out job %d of %d \n", i+1,BOARDSIZE);
-            i++;
+            MPI_Send(&buf, 2, MPI_INT, sender, 0, MPI_COMM_WORLD);
+            printf("Master dealing out job %d of %d \n", row+1, BOARDSIZE);
+            row++;
         }
     }
     printf("Master process terminated \n");
+    return totalSolutions;
 }
 
 // Worker mpi function.
@@ -111,7 +118,7 @@ void nq_recursion_worker(int myRank,int mySize) {
     MPI_Status status;
 
     // Receive initial work
-    MPI_Recv(&buf, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    MPI_Recv(&buf, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     if (buf[1]==0) {
         printf("Process %d of %d terminated before any work was done! \n", myRank, mySize);
         return;
@@ -124,37 +131,35 @@ void nq_recursion_worker(int myRank,int mySize) {
         chessboard[1] = row;
         partialSolutions = worker_recursion(1, chessboard);
         buf[0] = partialSolutions;
-        MPI_Send(&buf, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD);
-        MPI_Recv(&buf, 2, MPI_INT, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        MPI_Send(&buf, 2, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        MPI_Recv(&buf, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     }
     
     printf("Process %d of %d terminated \n", myRank, mySize);
+    return;
 }
 
 // Main. Initalizes MPI, starts a master and some workers, waits results and finalizes MPI.
 // Also times the whole computation.
 // TO DO -- Change timing to double MPI_Wtime( void ) to use wall time instead of cpu time.
 int main(int argc, char *argv[]) {
-    int chessboard[BOARDSIZE], myRank, mySize;
-    clock_t time;
+    int chessboard[BOARDSIZE], myRank, mySize, solutions;
+    printf("Program started \n");
     
-    time = clock();
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &mySize);
     if (myRank==0){
-        nq_recursion_master(myRank, mySize);
+        printf("Master initiated \n");
+        solutions = nq_recursion_master(myRank, mySize);
     }
     else {
         nq_recursion_worker(myRank, mySize);
     }
 
-
     MPI_Finalize();
-    
-    time = clock() - time;
-    double elapsed_time = ((double)(time))/CLOCKS_PER_SEC;
-    printf("Solutions: %i in %f seconds \n ", solutions, elapsed_time);
+    printf("Solutions: %d seconds \n ", solutions);
+    return 0;
 }
 
 
