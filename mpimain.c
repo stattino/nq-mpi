@@ -84,7 +84,6 @@ int nq_recursion_master_bigboard(int myRank, int mySize) {
 
     int chessboard[BOARDSIZE], buf[3], activeWorkers, totalSolutions,  pos[2], sender;
     buf[2] = 1;
-    sentJobs = 0;
     MPI_Status status;
     
     int* ptrPos;
@@ -97,20 +96,22 @@ int nq_recursion_master_bigboard(int myRank, int mySize) {
         buf[0] = ptrPos[0];
         buf[1] = ptrPos[1];
         MPI_Send(&buf, 3, MPI_INT, activeWorkers+1, 0, MPI_COMM_WORLD);
+        printf("Master sent job placing queens on (%d,%d) \n ", buf[0],buf[1]);
     }
     // Start receiving solutions and dish out work until none left. Then kill processes
     while (activeWorkers>0) {
         MPI_Recv(&buf, 3, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
         sender = status.MPI_SOURCE;
-        printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
-        totalSolutions+= buf[0];
+        //printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
+        totalSolutions += buf[0];
         
-        if (ptrPos[0]<BOAlsRDSIZE){
+        if (ptrPos[0]<BOARDSIZE){
             next_position(chessboard, ptrPos);
+            
             buf[0] = ptrPos[0];
             buf[1] = ptrPos[1];
             MPI_Send(&buf, 3, MPI_INT, sender, 0, MPI_COMM_WORLD);
-            printf("Master dealt out job %d \n ", sentJobs);
+            printf("Master sent job placing queens on (%d,%d) \n ", buf[0],buf[1]);
             sentJobs++;
         }
         else {
@@ -119,7 +120,7 @@ int nq_recursion_master_bigboard(int myRank, int mySize) {
             activeWorkers--;
         }
     }
-    printf("Master process terminated \n");
+    printf(" ... Master process terminated ... \n");
     return totalSolutions;
 }
 
@@ -131,6 +132,7 @@ void nq_recursion_worker_bigboard(int myRank,int mySize) {
     MPI_Recv(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     // Receive more work until termination message received
     while (buf[2]==1) {
+        partialSolutions=0;
         int chessboard[BOARDSIZE];
         chessboard[0] = buf[0];
         chessboard[1] = buf[1];
@@ -139,8 +141,6 @@ void nq_recursion_worker_bigboard(int myRank,int mySize) {
         MPI_Send(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD);
         MPI_Recv(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     }
-    
-    printf("   .. Worker %d of %d terminated .. \n", myRank+1, mySize);
     return;
 }
 
