@@ -63,7 +63,7 @@ void next_position(int chessboard[], int* nextPos) {
         if (chessboard[0] == BOARDSIZE) {
             break;
         }
-        else if (chessboard[1]==BOARDSIZE-1) {
+        else if (chessboard[1]>=BOARDSIZE-1) {
             chessboard[0]++;
             chessboard[1]=0;
         }
@@ -71,8 +71,6 @@ void next_position(int chessboard[], int* nextPos) {
             chessboard[1]++;
         }
     }
-    
-    // Return the next valid position
     nextPos[0] = chessboard[0];
     nextPos[1] = chessboard[1];
 }
@@ -82,37 +80,32 @@ void next_position(int chessboard[], int* nextPos) {
 int nq_recursion_master_bigboard(int myRank, int mySize) {
     
     if (mySize>((BOARDSIZE-1)*(BOARDSIZE-2))) {printf("Not implemented yet! \n");return 0;}
-    printf("... Entered master process ... \n");
+    printf("  ... Entered master process ...   \n");
 
-    int chessboard[BOARDSIZE], buf[3], row_1, row_2, sentJobs, activeWorkers, totalSolutions;
+    int chessboard[BOARDSIZE], buf[3], activeWorkers, totalSolutions,  pos[2], sender;
     buf[2] = 1;
     sentJobs = 0;
     MPI_Status status;
-    int* ptrPos;
-    int pos[2], sender;
-    pos[0] = row_1;
-    pos[1] = row_2;
-    ptrPos = pos;
     
+    int* ptrPos;
+    pos[0] = 0;
+    pos[1] = 0;
+    ptrPos = pos;
     // Initial workload for all workers
-    while (sentJobs<mySize-1) {
+    for (activeWorkers=0; activeWorkers<mySize-1;activeWorkers++) {
         next_position(chessboard, ptrPos);
         buf[0] = ptrPos[0];
         buf[1] = ptrPos[1];
-        MPI_Send(&buf, 3, MPI_INT, sentJobs+1, 0, MPI_COMM_WORLD);
-        sentJobs++;
+        MPI_Send(&buf, 3, MPI_INT, activeWorkers+1, 0, MPI_COMM_WORLD);
     }
-    activeWorkers = mySize-1; // the commgroup - the root
-    
     // Start receiving solutions and dish out work until none left. Then kill processes
     while (activeWorkers>0) {
-
         MPI_Recv(&buf, 3, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
         sender = status.MPI_SOURCE;
         printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
         totalSolutions+= buf[0];
         
-        if (ptrPos[0]<BOARDSIZE){
+        if (ptrPos[0]<BOAlsRDSIZE){
             next_position(chessboard, ptrPos);
             buf[0] = ptrPos[0];
             buf[1] = ptrPos[1];
@@ -147,7 +140,7 @@ void nq_recursion_worker_bigboard(int myRank,int mySize) {
         MPI_Recv(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     }
     
-    printf("Worker %d of %d terminated \n", myRank+1, mySize);
+    printf("   .. Worker %d of %d terminated .. \n", myRank+1, mySize);
     return;
 }
 
