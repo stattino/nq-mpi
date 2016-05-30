@@ -7,7 +7,7 @@ typedef int bool;
 #define true 1
 #define false 0
 
-bool threatens(const int row_1,const int row_2,const int col_1,const int col_2) {
+bool threatens(const int row_1, const int row_2, const int col_1, const int col_2) {
     if ( row_1==row_2||abs(row_1-row_2)==abs(col_1-col_2) ){
         return true;
     }
@@ -48,6 +48,8 @@ int worker_recursion(int counter, int board[]){
     return workerSols;
 }
 
+/* Changes values in nextPos to a valid configuration, ready for a worker. Returns non-valid position (out of board range) if it has gone through all valid already.
+ */
 void next_position(int chessboard[], int* nextPos) {
     // Start by incrementing by one so not to return original position
     if (chessboard[1]==BOARDSIZE-1) {
@@ -85,6 +87,8 @@ int nq_recursion_master_bigboard(int myRank, int mySize) {
     int chessboard[BOARDSIZE], buf[3], activeWorkers, totalSolutions,  pos[2], sender;
     buf[2] = 1;
     MPI_Status status;
+    chessboard[0] = 0;
+    chessboard[1] = 0;
     
     int* ptrPos;
     pos[0] = 0;
@@ -96,7 +100,6 @@ int nq_recursion_master_bigboard(int myRank, int mySize) {
         buf[0] = ptrPos[0];
         buf[1] = ptrPos[1];
         MPI_Send(&buf, 3, MPI_INT, activeWorkers+1, 0, MPI_COMM_WORLD);
-        printf("Master sent job placing queens on (%d,%d) \n ", buf[0],buf[1]);
     }
     // Start receiving solutions and dish out work until none left. Then kill processes
     while (activeWorkers>0) {
@@ -104,15 +107,11 @@ int nq_recursion_master_bigboard(int myRank, int mySize) {
         sender = status.MPI_SOURCE;
         //printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
         totalSolutions += buf[0];
-        
+        next_position(chessboard, ptrPos);
         if (ptrPos[0]<BOARDSIZE){
-            next_position(chessboard, ptrPos);
-            
             buf[0] = ptrPos[0];
             buf[1] = ptrPos[1];
             MPI_Send(&buf, 3, MPI_INT, sender, 0, MPI_COMM_WORLD);
-            printf("Master sent job placing queens on (%d,%d) \n ", buf[0],buf[1]);
-            sentJobs++;
         }
         else {
             buf[2] = 0;
@@ -124,6 +123,8 @@ int nq_recursion_master_bigboard(int myRank, int mySize) {
     return totalSolutions;
 }
 
+/* Worker for when no. processes>boardsize
+ */
 void nq_recursion_worker_bigboard(int myRank,int mySize) {
     int buf[3], partialSolutions;
     MPI_Status status;
@@ -248,7 +249,7 @@ int main(int argc, char *argv[]) {
             nq_recursion_worker_bigboard(myRank, mySize);
         }
     }
-    
+
     MPI_Finalize();
     return 0;
 }
