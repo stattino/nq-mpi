@@ -7,11 +7,11 @@ typedef int bool;
 #define true 1
 #define false 0
 
+
 bool threatens(const int row_1, const int row_2, const int col_1, const int col_2) {
     return (row_1==row_2||abs(row_1-row_2)==abs(col_1-col_2)) ? true:false;
 }
 
-// Could hybridize w. OpenMP?
 bool is_checked(const int counter, int board[]) {
     int row_1, row_2;
     for (int col_1=0; col_1<counter; col_1++){
@@ -51,22 +51,16 @@ void next_position(int board[], int* nextPos, int boardSize) {
         board[0]++;
         board[1]=0;
     }
-    else {
-        board[1]++;
-    }
+    else board[1]++;
     
     // Then keep changing as long as its not valid
     while (!is_checked(2,board)) {
-        if (board[0] == boardSize) {
-            break;
-        }
+        if (board[0] == boardSize) break;
         else if (board[1]>=boardSize-1) {
             board[0]++;
             board[1]=0;
         }
-        else {
-            board[1]++;
-        }
+        else board[1]++;
     }
     nextPos[0] = board[0];
     nextPos[1] = board[1];
@@ -74,12 +68,12 @@ void next_position(int board[], int* nextPos, int boardSize) {
 
 /* Master for when number of proc. are greater than the board.
  */
-int nq_recursion_master_bigboard(int myRank, int mySize, int boardSize, double *timeVec) {
+int nq_recursion_master_bigboard(int myRank, int mySize, int boardSize, double timeVec[]) {
     
     if (mySize>((boardSize-1)*(boardSize-2))) {printf("Not implemented yet! \n");return 0;}
     printf("  ... Entered master process ...   \n");
 
-    int chessboard[boardSize], buf[3], activeWorkers, totalSolutions,  pos[2], sender;
+    int chessboard[boardSize], buf[3], activeWorkers, totalSolutions, pos[2], sender;
     double tBuf[2];
     
     buf[2] = 1;
@@ -94,6 +88,7 @@ int nq_recursion_master_bigboard(int myRank, int mySize, int boardSize, double *
     // Initial workload for all workers
     for (activeWorkers=0; activeWorkers<mySize-1; activeWorkers++) {
         next_position(chessboard, ptrPos, boardSize);
+        printf("chessboard sent: (%d, %d) \n", chessboard[0], chessboard[1]);
         buf[0] = ptrPos[0];
         buf[1] = ptrPos[1];
         MPI_Send(&buf, 3, MPI_INT, activeWorkers+1, 0, MPI_COMM_WORLD);
@@ -105,6 +100,7 @@ int nq_recursion_master_bigboard(int myRank, int mySize, int boardSize, double *
         //printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
         totalSolutions += buf[0];
         next_position(chessboard, ptrPos, boardSize);
+        printf("chessboard sent: (%d, %d) \n", chessboard[0], chessboard[1]);
         if (ptrPos[0]<boardSize){
             buf[0] = ptrPos[0];
             buf[1] = ptrPos[1];
@@ -125,13 +121,12 @@ int nq_recursion_master_bigboard(int myRank, int mySize, int boardSize, double *
 
 /* Worker for when no. processes>boardsize
  */
-void nq_recursion_worker_bigboard(int myRank,int mySize, int boardSize) {
+void nq_recursion_worker_bigboard(int myRank, int mySize, int boardSize) {
     int buf[3], partialSolutions;
     double tBuf[2], nPlacements, tStart, tEnd;
     tStart = MPI_Wtime();
 
     MPI_Status status;
-    printf("Worker %d of %d initiated \n", myRank+1, mySize);
     // Receive initial work
     MPI_Recv(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     // Receive more work until termination message received
@@ -140,8 +135,7 @@ void nq_recursion_worker_bigboard(int myRank,int mySize, int boardSize) {
         int chessboard[boardSize];
         chessboard[0] = buf[0];
         chessboard[1] = buf[1];
-        partialSolutions = worker_recursion(2, chessboard, boardSize);
-        buf[0] = partialSolutions;
+        buf[0] = worker_recursion(2, chessboard, boardSize);
         MPI_Send(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD);
         MPI_Recv(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
         nPlacements++;
@@ -151,14 +145,12 @@ void nq_recursion_worker_bigboard(int myRank,int mySize, int boardSize) {
     tBuf[0] = tStart-tEnd; // Could make an MPI struct just to try it out, with one double and one int
     tBuf[1] = nPlacements; // instead of having nPlacements as a double, when it only takes int values.
     MPI_Send(&tBuf, 2, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD); // tag 1 for timing
-    
-    printf("Process %d of %d terminated \n", myRank, mySize);
     return;
 }
 
 /* Master mpi function. Called by only one process. Deals out work to worker processes. Right now, N < boardsize, and it deals out N tasks in total, where each task is the board with the first queen on a row.
  */
-int nq_recursion_master(int myRank, int mySize, int boardSize, double* timeVec) {
+int nq_recursion_master(int myRank, int mySize, int boardSize, double timeVec[]) {
     int buf[2], row, activeWorkers, totalSolutions, sender;
     double tBuf[2];
     MPI_Status status;
@@ -166,7 +158,6 @@ int nq_recursion_master(int myRank, int mySize, int boardSize, double* timeVec) 
     
     printf("... Entered master process ... \n");
     
-
     // Send one job to each process in the commgroup. Keep row as tracker of where the queen has been placed.
     for (row=0; row<mySize-1; row++) {
         buf[0] = row;
@@ -180,10 +171,7 @@ int nq_recursion_master(int myRank, int mySize, int boardSize, double* timeVec) 
     while (activeWorkers>0) {
         MPI_Recv(&buf, 2, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
         sender = status.MPI_SOURCE;
-        
         totalSolutions += buf[0];
-        printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
-
         // If received solution was to the final task: initialize a count down, and start killing processes. Otherwise keep sending out work.
         if (row == boardSize) {
             buf[1] = 0;
@@ -206,14 +194,12 @@ int nq_recursion_master(int myRank, int mySize, int boardSize, double* timeVec) 
 }
 /* Worker mpi function. Receives a position on the board and starts worker_recursions on them. Terminates only when they receive a termination message in buf[1].
  */
-void nq_recursion_worker(int myRank,int mySize, int boardSize) {
+void nq_recursion_worker(int myRank, int mySize, int boardSize) {
     int buf[2], row, partialSolutions;
     double tBuf[2], nPlacements, tStart, tEnd;
     tStart = MPI_Wtime();
 
     MPI_Status status;
-    printf("Worker %d of %d initiated \n", myRank, mySize-1);
-
     // Receive initial work
     MPI_Recv(&buf, 2, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
     
@@ -231,11 +217,10 @@ void nq_recursion_worker(int myRank,int mySize, int boardSize) {
     
     tEnd = MPI_Wtime();
     
-    tBuf[0] = tStart-tEnd; // Could make an MPI struct just to try it out, with one double and one int
+    tBuf[0] = tEnd-tStart; // Could make an MPI struct just to try it out, with one double and one int
     tBuf[1] = nPlacements; // instead of having nPlacements as a double, when it only takes int values.
     MPI_Send(&tBuf, 2, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD); // tag 1 for timing
-    
-    printf("Process %d of %d terminated \n", myRank, mySize);
+    printf("Worker process (%d of %d) terminated \n", myRank,mySize-1);
     return;
 }
 
@@ -250,14 +235,18 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &mySize);
-
-    if (mySize<boardSize+1){
+    // Do a comparison of speed for same n and boardsize, then keep the faster version.
+    if (mySize<=boardSize+1){
         if (myRank==0){
             double timeVec[2*mySize];
             tStart = MPI_Wtime();
             solutions = nq_recursion_master(myRank, mySize, boardSize, timeVec);
-            printf("Solutions: %d (seconds.. to be implemented) \n ", solutions);
             tEnd = MPI_Wtime();
+            printf("Solutions: %d  Total time elapsed:  %10.4f \n The worker processes' timings below \n", solutions, tEnd-tStart);
+            for (int i=0; i<mySize; i++){
+                printf("Process %d: %10.4f s, %1f positions \n", i, timeVec[2*i] , timeVec[2*i+1]);
+            }
+            
         }
         else {
             nq_recursion_worker(myRank, mySize, boardSize);
@@ -265,22 +254,21 @@ int main(int argc, char *argv[]) {
     }
     else {
         if (myRank==0){
-            int timeVec[2*mySize];
+            double timeVec[2*mySize];
             tStart = MPI_Wtime();
-            solutions = nq_recursion_master_bigboard(myRank, mySize, boardSize);
-            printf("Solutions: %d (seconds.. to be implemented) \n ", solutions);
+            solutions = nq_recursion_master_bigboard(myRank, mySize, boardSize, timeVec);
             tEnd = MPI_Wtime();
+            printf("Solutions: %d  Total time elapsed:  %10.4f \n The worker processes' timings below \n", solutions, tEnd-tStart);
+            for (int i=0; i<mySize; i++){
+                printf("Process %d: %10.4f s, %1f positions \n", i, timeVec[2*i] , timeVec[2*i+1]);
+            }
+            
         }
         else {
             nq_recursion_worker_bigboard(myRank, mySize, boardSize);
         }
     }
     MPI_Finalize();
-    
-    printf("Total time elapsed:    %10.4f \n", tEnd-tStart);
-    for (int i = 0; i<2*mySize); i++){
-        printf("Process %d: %10.4f s, %1f positions \n", i, timeVec[2*i] , timeVec[2*i+1]);
-    }
     
     return 0;
 }
