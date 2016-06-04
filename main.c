@@ -1,11 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-//static const int BOARDSIZE=14;
+#include <sys/time.h>
+
 static int solutions=0;
 typedef int bool;
 #define true 1
 #define false 0
+
+double second() {
+    struct timeval tp;
+    gettimeofday(&tp, NULL);
+    return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
+}
 
 static bool threatens(const int row_1,const int row_2,const int col_1,const int col_2) {
     //  Checks if the queens are on the same row, or diagonal
@@ -61,11 +68,11 @@ int main(int argc, char *argv[]) {
     //printf("Input: %d", N);
     
     int chessboard[boardSize];
-    time_t tStart;
-    tStart = time(NULL);
+    double tStart;
+    tStart = second();
     nq_recursion(0, chessboard, boardSize);
-    tStart = time(NULL) - tStart;
-    printf("Solutions: %d in %f seconds", solutions, ((double)(tStart)));
+    tStart = second() - tStart;
+    printf("Solutions: %d in %4.4f seconds", solutions, tStart);
 }
 
 
