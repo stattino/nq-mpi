@@ -73,7 +73,7 @@ int nq_recursion_master_bigboard(int myRank, int mySize, int boardSize, double t
     printf("  ... Entered master process ...   \n");
     int chessboard[boardSize], buf[3], activeWorkers, totalSolutions, pos[2], sender;
     double tBuf[2];
-    int totalSolutions=0;
+    totalSolutions=0;
     
     buf[2] = 1;
     MPI_Status status;

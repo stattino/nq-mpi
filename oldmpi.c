@@ -52,7 +52,7 @@ int nq_recursion_master(int myRank, int mySize, int boardSize, double timeVec[])
     
     printf("... Entered master process ... \n");
     
-    // Send one job to each process in the commgroup. Keep row as tracker of where the queen has been placed.
+    // Send one job to each process in the commgroup. Keep row as a tracker of where the queen has been placed.
     for (row=0; row<mySize-1; row++) {
         buf[0] = row;
         buf[1] = 1;
@@ -114,7 +114,6 @@ void nq_recursion_worker(int myRank, int mySize, int boardSize) {
     tBuf[0] = tEnd-tStart; // Could make an MPI struct just to try it out, with one double and one int
     tBuf[1] = nPlacements; // instead of having nPlacements as a double, when it only takes int values.
     MPI_Send(&tBuf, 2, MPI_DOUBLE, 0, 1, MPI_COMM_WORLD); // tag 1 for timing
-    printf("Worker process (%d of %d) terminated \n", myRank,mySize-1);
     return;
 }
 
@@ -130,7 +129,7 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &mySize);
-    if (mySize+1>boardSize) {printf("use mpimain.c instead"); return 0;}
+    if (mySize-1>boardSize) {if (myRank==0) printf("use mpimain.c instead \n"); return 0;}
     // Do a comparison of speed for same n and boardsize, then keep the faster version.
     if (myRank==0){
         double timeVec[2*mySize];
@@ -138,16 +137,15 @@ int main(int argc, char *argv[]) {
         solutions = nq_recursion_master(myRank, mySize, boardSize, timeVec);
         tEnd = MPI_Wtime();
         printf("Solutions: %d  Total time elapsed:  %10.4f \n The worker processes' timings below \n", solutions, tEnd-tStart);
-        for (int i=0; i<mySize; i++){
-            printf("Process %d: %10.4f s, %1.0f positions \n", i, timeVec[2*i], timeVec[2*i+1];
+        for (int i=0; i<mySize; i++) {
+            printf("Process %d: %10.4f s, %1.0f positions \n", i, timeVec[2*i], timeVec[2*i+1]);
+        }
+        else {
+            nq_recursion_worker(myRank, mySize, boardSize);
         }
         
+        MPI_Finalize();
+        
+        return 0;
     }
-    else {
-        nq_recursion_worker(myRank, mySize, boardSize);
-    }
-  
-    MPI_Finalize();
-    
-    return 0;
 }
