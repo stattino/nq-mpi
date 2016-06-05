@@ -6,12 +6,6 @@ typedef int bool;
 #define true 1
 #define false 0
 
-double second() {
-    struct timeval tp;
-    gettimeofday(&tp, NULL);
-    return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
-}
-
 static bool threatens(const int row_1,const int row_2,const int col_1,const int col_2) {
     return (row_1==row_2||abs(row_1-row_2)==abs(col_1-col_2)) ? true:false;
 }
@@ -50,7 +44,7 @@ int main(int argc, char *argv[]) {
     int boardSize=13;
     int chessboard[boardSize];
     nq_recursion(0, chessboard, boardSize);
-    printf("Solutions: %d in %4.4f seconds \n", solutions, tStart);
+    printf("Solutions: %d  \n", solutions);
 }
 
 

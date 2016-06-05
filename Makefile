@@ -4,8 +4,8 @@ GCC_OPT=-O2 -ftree-vectorize
 GCC_OPT_HEAVY=-O3 -ftree-vectorize
 
 CC_2=icc
-ICC_OPT=-O2 –vec-report
-ICC_OPT_HEAVY=-03 –vec-report
+ICC_OPT=-O2 
+ICC_OPT_HEAVY=-O3 
 
 MPI=mpicc
 DEPS=io_funct.c
@@ -14,7 +14,7 @@ EXECUTABLES=main_prof main_safe main_gcc main_icc main_heavy main_heavy_icc main
 
 all: $(EXECUTABLES)
 
-main_prof: main_profile.c
+main_prof: profile_main.c
 	$(CC) $< $(LDFLAGS) -pg -o $@
 main_safe: main.c
 	$(CC) $< $(DEPS) $(LDFLAGS) -o $@

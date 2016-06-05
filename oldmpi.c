@@ -68,7 +68,7 @@ int nq_recursion_master(int myRank, int mySize, int boardSize, double timeVec[])
         sender = status.MPI_SOURCE;
         totalSolutions += buf[0];
         // If received solution was to the final task: initialize a count down, and start killing processes. Otherwise keep sending out work.
-        if (row == boardSize) {
+        if (row == ((boardSize+1)/2) ) {
             buf[1] = 0;
             MPI_Send(&buf, 2, MPI_INT, sender, 0, MPI_COMM_WORLD); // kill
             MPI_Recv(&tBuf, 2, MPI_DOUBLE, sender, 1, MPI_COMM_WORLD, &status); // get time
@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
         double timeVec[2*mySize];
         tStart = MPI_Wtime();
         solutions = nq_recursion_master(myRank, mySize, boardSize, timeVec);
+        solutions *=2;
         tEnd = MPI_Wtime();
         printf("Solutions: %d  Total time elapsed:  %10.4f \n The worker processes' timings below \n", solutions, tEnd-tStart);
         for (int i=0; i<mySize; i++) {

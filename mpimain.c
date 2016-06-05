@@ -99,7 +99,7 @@ int nq_recursion_master_bigboard(int myRank, int mySize, int boardSize, double t
         //printf("Worker no. %d found %d solutions \n ", sender, buf[0]);
         totalSolutions += buf[0];
         next_position(chessboard, ptrPos, boardSize);
-        if (ptrPos[0]<boardSize){
+        if (ptrPos[0]<(boardSize+1)/2){
             buf[0] = ptrPos[0];
             buf[1] = ptrPos[1];
             MPI_Send(&buf, 3, MPI_INT, sender, 0, MPI_COMM_WORLD);
@@ -162,6 +162,7 @@ int main(int argc, char *argv[]) {
         double timeVec[2*mySize];
         tStart = MPI_Wtime();
         solutions = nq_recursion_master_bigboard(myRank, mySize, boardSize, timeVec);
+        solutions *= 2;
         tEnd = MPI_Wtime();
         printf("Solutions: %d  Total time elapsed:  %10.4f \n The worker processes' timings below \n", solutions, tEnd-tStart);
         for (int i=0; i<mySize; i++){
