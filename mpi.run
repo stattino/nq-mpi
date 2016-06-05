@@ -1,0 +1,20 @@
+#!/bin/bash 
+#SBATCH --workdir /home/stattin/nq-mpi/results
+#SBATCH --time 00:25:00
+#SBATCH --reservation=phpc2016
+
+echo STARTING AT `date`
+
+for i in {10..20..2}
+do
+	printf " \n $i processors:   "
+	srun -n 15 ./main_mpi $i 0 
+done
+
+for i in {10..20..2}
+do
+        printf " \n $i processors:   "
+        srun -n $i ./main_mpi 18 0
+done
+
+echo FINISHED at `date`

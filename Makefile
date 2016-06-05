@@ -1,29 +1,34 @@
 CC=gcc
 LDFLAGS=-lm -std=c99 -Wall
-GCC_OPT=-g -O2 -ftree-vectorize
+GCC_OPT=-O2 -ftree-vectorize
 GCC_OPT_HEAVY=-O3 -ftree-vectorize
 
-MKL_FLAGS=-DMKLINUSE -DMKL_ILP64 -I${MKLROOT}/include -L${MKLROOT}/lib/intel64 -lmkl_in
-tel_ilp64 -lmkl_core -lmkl_sequential -lpthread
-ICC_OPT=-O3 -xHost
+CC_2=icc
+ICC_OPT=-O2 –vec-report
+ICC_OPT_HEAVY=-03 –vec-report
 
 MPI=mpicc
+DEPS=io_funct.c
 
+EXECUTABLES=main_prof main_safe main_gcc main_icc main_heavy main_heavy_icc main_mpi old_mpi
 
-EXECUTABLES=main_safe main_gcc main_heavy main_mpi old_mpi
-#main_icc
 all: $(EXECUTABLES)
+
+main_prof: main_profile.c
+	$(CC) $< $(LDFLAGS) -pg -o $@
 main_safe: main.c
-	$(CC) $(C_FLAGS) $< $(LDFLAGS) -o $@
+	$(CC) $< $(DEPS) $(LDFLAGS) -o $@
 main_gcc: main.c
-	$(CC) $(GCC_OPT) $< $(LDFLAGS) -o $@
+	$(CC) $(GCC_OPT) $< $(DEPS) $(LDFLAGS) -o $@
 main_heavy: main.c
-	$(CC) $(GCC_OPT_HEAVY) $< $(LDFLAGS) -o $@
+	$(CC) $(GCC_OPT_HEAVY) $< $(DEPS) $(LDFLAGS) -o $@
+main_icc: main.c
+	$(CC_2) $(ICC_OPT) $< $(DEPS) $(LDFLAGS) -o $@
+main_heavy_icc: main.c 
+        $(CC_2) $(ICC_OPT_HEAVY) $< $(DEPS) $(LDFLAGS) -o $@
 main_mpi: mpimain.c
-	$(MPI) $< $(LDFLAGS) -o $@
+	$(MPI) $< $(DEPS) $(LDFLAGS) -o $@
 old_mpi: oldmpi.c
-	$(MPI) $< $(LDFLAGS) -o $@
-#main_icc: main.c
-#	icc $(ICC_OPT) $< $(MKL_FLAGS) -lm -o $@
+	$(MPI) $< $(DEPS) $(LDFLAGS) -o $@
 clean:
 	rm -f $(EXECUTABLES)

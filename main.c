@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
-
+#include "io_funct.h"
 static int solutions=0;
 typedef int bool;
 #define true 1

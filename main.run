@@ -1,0 +1,16 @@
+#!/bin/bash 
+#SBATCH --workdir /home/stattin/nq-mpi/results
+#SBATCH --nodes 1
+#SBATCH --ntasks 1
+#SBATCH --cpus-per-task 1
+#SBATCH --time 00:05:00
+
+echo STARTING AT `date`
+
+for i in {10..17}
+do
+	printf "\n $i processors:   " 
+	./main_heavy $i 1
+done
+
+echo FINISHED at `date`

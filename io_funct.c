@@ -18,8 +18,8 @@ void write_qualitative(int nProc, int boardSize, double elapsedTime, double time
 
     fprintf(outFile, "%d, %d, %4.4f \n", nProc, boardSize, elapsedTime);
     
-    for (int i=0; i<boardSize; i++) {
-        fprintf(outFile, "%d, %4.4f, %1.0f \n", i+1, timeVec[2*i], timeVec[2*i+1]);
+    for (int i=1; i<nProc; i++) {
+        fprintf(outFile, "%d, %4.4f, %1.0f \n", i, timeVec[2*i], timeVec[2*i+1]);
     }
     fclose(outFile);
 }
@@ -29,7 +29,7 @@ void write_quantitative(int nProc, int boardSize, double elapsedTime) {
     outFile = fopen("quant.txt", "a");
     
     if (outFile == NULL) {
-        fprintf(stderr, "Can't open output file %s!\n", filename);
+        fprintf(stderr, "Can't open output file %s!\n", "quant.txt");
         exit(1);
     }
     fprintf(outFile, "%d, %d, %4.4f \n", nProc, boardSize, elapsedTime);
