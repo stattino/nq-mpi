@@ -73,6 +73,10 @@ int main(int argc, char *argv[]) {
     nq_recursion(0, chessboard, boardSize);
     tStart = second() - tStart;
     printf("Solutions: %d in %4.4f seconds", solutions, tStart);
+    
+    if (argc>2) {
+        write_quantitative(1, boardSize, tStart);
+    }
 }
 
 

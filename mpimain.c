@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include "io_funct.h"
 
 typedef int bool;
 #define true 1
@@ -122,7 +123,7 @@ void nq_recursion_worker_bigboard(int myRank, int mySize, int boardSize) {
     int buf[3], partialSolutions;
     double tBuf[2], nPlacements, tStart, tEnd;
     tStart = MPI_Wtime();
-
+    
     MPI_Status status;
     // Receive initial work
     MPI_Recv(&buf, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, &status);
@@ -156,7 +157,7 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &mySize);
-
+    
     if (myRank==0){
         double timeVec[2*mySize];
         tStart = MPI_Wtime();
@@ -165,6 +166,10 @@ int main(int argc, char *argv[]) {
         printf("Solutions: %d  Total time elapsed:  %10.4f \n The worker processes' timings below \n", solutions, tEnd-tStart);
         for (int i=0; i<mySize; i++){
             printf("Process %d: %10.4f s, %1.0f positions \n", i, timeVec[2*i] , timeVec[2*i+1]);
+        }
+        if (argc>2){
+            if (argv[2]==1) write_qualitative(mySize, boardSize,  tEnd-tStart, timeVec, 0);
+            else write_quantitative(mySize, boardSize,  tEnd-tStart);
         }
     }
     else {

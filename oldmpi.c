@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include "io_funct.h"
 
 typedef int bool;
 #define true 1
@@ -140,12 +141,17 @@ int main(int argc, char *argv[]) {
         for (int i=0; i<mySize; i++) {
             printf("Process %d: %10.4f s, %1.0f positions \n", i, timeVec[2*i], timeVec[2*i+1]);
         }
-        else {
-            nq_recursion_worker(myRank, mySize, boardSize);
+        if (argc>2){
+            if (argv[2]==1) write_qualitative(mySize, boardSize,  tEnd-tStart, timeVec, 0);
+            else write_quantitative(mySize, boardSize,  tEnd-tStart);
         }
-        
-        MPI_Finalize();
-        
-        return 0;
     }
+    else {
+        nq_recursion_worker(myRank, mySize, boardSize);
+    }
+    
+    MPI_Finalize();
+    
+    return 0;
+}
 }
