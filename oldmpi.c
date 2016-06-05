@@ -142,8 +142,14 @@ int main(int argc, char *argv[]) {
             printf("Process %d: %10.4f s, %1.0f positions \n", i, timeVec[2*i], timeVec[2*i+1]);
         }
         if (argc>2){
-            if (argv[2]==1) write_qualitative(mySize, boardSize,  tEnd-tStart, timeVec, 0);
-            else write_quantitative(mySize, boardSize,  tEnd-tStart);
+            int output;
+            sscanf(argv[2],"%d",&output);
+            if (output==1) {
+                write_qualitative(mySize, boardSize,  tEnd-tStart, timeVec, 0);
+            }
+            else {
+                write_quantitative(mySize, boardSize,  tEnd-tStart);
+            }
         }
     }
     else {
@@ -153,5 +159,4 @@ int main(int argc, char *argv[]) {
     MPI_Finalize();
     
     return 0;
-}
 }

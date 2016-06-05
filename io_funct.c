@@ -1,16 +1,21 @@
 #include "io_funct.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void write_qualitative(int nProc, int boardSize, double elapsedTime, double timeVec[], int depth){
-    char filename[15+4+2+2+2+1] = {'0'};
-    char prefix[] = "/results/qual_n";
+    char filename[6+4+2+2+2+1] = {'0'};
+    char prefix[] = "qual_n";
     char suffix[] = ".txt";
     sprintf(filename, "%s%2d%s%2d%s%d%s", prefix, nProc, "b", boardSize, "d", depth, suffix);
     
     FILE *outFile;
     outFile = fopen(filename, "w");
-    
+    if (outFile == NULL) {
+        fprintf(stderr, "Can't open output file %s!\n", filename);
+        exit(1);
+    }
+
     fprintf(outFile, "%d, %d, %4.4f \n", nProc, boardSize, elapsedTime);
     
     for (int i=0; i<boardSize; i++) {
@@ -21,8 +26,12 @@ void write_qualitative(int nProc, int boardSize, double elapsedTime, double time
 
 void write_quantitative(int nProc, int boardSize, double elapsedTime) {
     FILE *outFile;
-    outFile = fopen("/results/quant.txt", "a");
+    outFile = fopen("quant.txt", "a");
     
+    if (outFile == NULL) {
+        fprintf(stderr, "Can't open output file %s!\n", filename);
+        exit(1);
+    }
     fprintf(outFile, "%d, %d, %4.4f \n", nProc, boardSize, elapsedTime);
     
     fclose(outFile);
